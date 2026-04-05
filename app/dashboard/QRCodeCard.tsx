@@ -1,6 +1,7 @@
 'use client'
 
 import { useTheme } from 'next-themes'
+import QRCode from 'qrcode' 
 
 type Props = {
   slug: string
@@ -91,14 +92,14 @@ export default function QRCodeCard({ slug, firstname, lastname }: Props) {
         {cardUrl && (
           <canvas 
   ref={(canvas) => {
-    if (canvas && cardUrl) {
-      QRCode.toCanvas(canvas, cardUrl, { 
-        width: 220,
-        margin: 1,
-        color: { dark: '#000', light: '#fff' }
-      })
-    }
-  }}
+  if (canvas && cardUrl) {
+    QRCode.toCanvas(canvas, cardUrl, { 
+      width: 220,
+      margin: 1,
+      color: { dark: '#000', light: '#fff' }
+    })
+  }
+}}
   style={{ width: '220px', height: '220px' }}
 />
         )}
