@@ -1,6 +1,6 @@
 'use client'
 
-import { QRCodeCanvas } from 'qrcode.react'
+import QRCode from 'qrcode'
 
 type Props = {
   slug: string
@@ -10,48 +10,27 @@ type Props = {
 }
 
 export default function CardActions({ slug, firstname, lastname, accent }: Props) {
-  const downloadQR = () => {
-    const qrUrl = `${window.location.origin}/card/${slug}`
-    
-    // Canvas temporaire pour QR
-    const canvas = document.createElement('canvas')
-    canvas.width = 800
-    canvas.height = 800
-    
-    const tempDiv = document.createElement('div')
-    tempDiv.style.position = 'absolute'
-    tempDiv.style.left = '-9999px'
-    tempDiv.innerHTML = `<QRCodeCanvas 
-      value="${qrUrl}" 
-      size={760}
-      fgColor="#000000" 
-      bgColor="#FFFFFF"
-    />`
-    
-    document.body.appendChild(tempDiv)
-    
-    // Convertit en image après rendu
-    setTimeout(() => {
-      html2canvas(tempDiv.firstChild as HTMLElement, {
-  width: 800,
-  height: 800,
-  background: '#FFFFFF',
-  useCORS: true
-        }).then((renderedCanvas) => {
-        const dataUrl = renderedCanvas.toDataURL('image/png')
-        
-        const link = document.createElement('a')
-        link.href = dataUrl
-        link.download = `CrazySkull-${slug}.png`
-        link.click()
-        
-        document.body.removeChild(tempDiv)
-      }).catch((error) => {
-        console.error('Erreur QR:', error)
-        alert('Erreur génération QR code')
-        document.body.removeChild(tempDiv)
+  const downloadQR = async () => {
+    try {
+      const qrUrl = `${window.location.origin}/card/${slug}`
+      
+      const dataUrl = await QRCode.toDataURL(qrUrl, {
+        width: 800,
+        margin: 2,
+        color: {
+          dark: '#000000',
+          light: '#FFFFFF',
+        },
       })
-    }, 100)
+
+      const link = document.createElement('a')
+      link.href = dataUrl
+      link.download = `CrazySkull-${slug}.png`
+      link.click()
+    } catch (error) {
+      console.error('Erreur génération QR:', error)
+      alert('Impossible de générer le QR code')
+    }
   }
 
   return (
