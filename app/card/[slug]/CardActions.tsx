@@ -1,6 +1,6 @@
 'use client'
 
-import QRCodeCanvas from 'qrcode.react'
+import { QRCodeCanvas } from 'qrcode.react'
 
 type Props = {
   slug: string
