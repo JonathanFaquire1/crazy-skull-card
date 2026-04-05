@@ -1,6 +1,5 @@
 'use client'
 
-import { QRCodeCanvas } from 'qrcode.react'
 import { useTheme } from 'next-themes'
 
 type Props = {
