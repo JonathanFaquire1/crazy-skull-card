@@ -1,6 +1,6 @@
 'use client'
 
-import QRCodeCanvas from 'qrcode'
+import QRCodeCanvas from 'qrcode.react'
 
 type Props = {
   slug: string
@@ -10,31 +10,58 @@ type Props = {
 }
 
 export default function CardActions({ slug, firstname, lastname, accent }: Props) {
-  const downloadQR = async () => {
-    try {
-      const qrUrl = `${window.location.origin}/card/${slug}`
-
-      const dataUrl = await QRCode.toDataURL(qrUrl, {
+  const downloadQR = () => {
+    const qrUrl = `${window.location.origin}/card/${slug}`
+    
+    // Canvas temporaire pour QR
+    const canvas = document.createElement('canvas')
+    canvas.width = 800
+    canvas.height = 800
+    
+    const tempDiv = document.createElement('div')
+    tempDiv.style.position = 'absolute'
+    tempDiv.style.left = '-9999px'
+    tempDiv.innerHTML = `<QRCodeCanvas 
+      value="${qrUrl}" 
+      size={760}
+      fgColor="#000000" 
+      bgColor="#FFFFFF"
+    />`
+    
+    document.body.appendChild(tempDiv)
+    
+    // Convertit en image après rendu
+    setTimeout(() => {
+      html2canvas(tempDiv.firstChild as HTMLElement, {
+        canvas: canvas,
         width: 800,
-        margin: 2,
-        color: {
-          dark: '#000000',
-          light: '#FFFFFF',
-        },
+        height: 800,
+        scale: 2,
+        backgroundColor: '#FFFFFF'
+      }).then((renderedCanvas) => {
+        const dataUrl = renderedCanvas.toDataURL('image/png')
+        
+        const link = document.createElement('a')
+        link.href = dataUrl
+        link.download = `CrazySkull-${slug}.png`
+        link.click()
+        
+        document.body.removeChild(tempDiv)
+      }).catch((error) => {
+        console.error('Erreur QR:', error)
+        alert('Erreur génération QR code')
+        document.body.removeChild(tempDiv)
       })
-
-      const link = document.createElement('a')
-      link.href = dataUrl
-      link.download = `CrazySkull-${slug}.png`
-      link.click()
-    } catch (error) {
-      console.error('Erreur génération QR:', error)
-      alert('Impossible de générer le QR code')
-    }
+    }, 100)
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '32px' }}>
+    <div style={{ 
+      display: 'flex', 
+      flexDirection: 'column', 
+      gap: '16px', 
+      marginBottom: '32px' 
+    }}>
       <a
         href={`/api/vcf/${slug}`}
         download={`${firstname}_${lastname}.vcf`}
@@ -55,7 +82,15 @@ export default function CardActions({ slug, firstname, lastname, accent }: Props
           boxShadow: `0 8px 24px ${accent}40`,
         }}
       >
-        <img src="/logo.png" alt="" style={{ height: '24px', width: 'auto', filter: 'brightness(0) invert(1)' }} />
+        <img 
+          src="/logo.png" 
+          alt="" 
+          style={{ 
+            height: '24px', 
+            width: 'auto', 
+            filter: 'brightness(0) invert(1)' 
+          }} 
+        />
         ENREGISTRER LE CONTACT
       </a>
 
