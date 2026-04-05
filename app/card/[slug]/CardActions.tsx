@@ -33,12 +33,12 @@ export default function CardActions({ slug, firstname, lastname, accent }: Props
     // Convertit en image après rendu
     setTimeout(() => {
       html2canvas(tempDiv.firstChild as HTMLElement, {
-        canvas: canvas,
-        width: 800,
-        height: 800,
-        scale: 2,
-        backgroundColor: '#FFFFFF'
-      }).then((renderedCanvas) => {
+  width: 800,
+  height: 800,
+  scale: 2,
+  backgroundColor: '#FFFFFF',
+  useCORS: true,
+        }).then((renderedCanvas) => {
         const dataUrl = renderedCanvas.toDataURL('image/png')
         
         const link = document.createElement('a')
