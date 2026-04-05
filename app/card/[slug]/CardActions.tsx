@@ -35,7 +35,7 @@ export default function CardActions({ slug, firstname, lastname, accent }: Props
       html2canvas(tempDiv.firstChild as HTMLElement, {
   width: 800,
   height: 800,
-  backgroundColor: '#FFFFFF',
+  background: '#FFFFFF',
   useCORS: true
         }).then((renderedCanvas) => {
         const dataUrl = renderedCanvas.toDataURL('image/png')
