@@ -1,6 +1,6 @@
 'use client'
 
-import QRCodeCanvas from 'qrcode
+import QRCodeCanvas from 'qrcode'
 
 type Props = {
   slug: string
