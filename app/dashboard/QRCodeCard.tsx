@@ -1,7 +1,6 @@
 'use client'
 
 import { useTheme } from 'next-themes'
-import QRCode from 'qrcode' 
 
 type Props = {
   slug: string
@@ -20,19 +19,6 @@ export default function QRCodeCard({ slug, firstname, lastname }: Props) {
 
   const cardUrl =
     typeof window !== 'undefined' ? `${window.location.origin}/card/${slug}` : ''
-
-  function downloadQRCode() {
-    const canvas = document.getElementById(`qr-code-canvas-${slug}`) as HTMLCanvasElement | null
-    if (!canvas) return
-
-    const pngUrl = canvas.toDataURL('image/png')
-    const link = document.createElement('a')
-    link.href = pngUrl
-    link.download = `qr-code-${firstname || 'card'}-${lastname || ''}.png`
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-  }
 
   async function copyUrl() {
     try {
@@ -76,7 +62,7 @@ export default function QRCodeCard({ slug, firstname, lastname }: Props) {
           marginBottom: '16px',
         }}
       >
-        Si le téléphone n’a pas le NFC, ce QR code permet d’ouvrir directement la carte de visite.
+        Si le téléphone n'a pas le NFC, ce QR code permet d'ouvrir directement la carte de visite.
       </p>
 
       <div
@@ -90,18 +76,11 @@ export default function QRCodeCard({ slug, firstname, lastname }: Props) {
         }}
       >
         {cardUrl && (
-          <canvas 
-  ref={(canvas) => {
-  if (canvas && cardUrl) {
-    QRCode.toCanvas(canvas, cardUrl, { 
-      width: 220,
-      margin: 1,
-      color: { dark: '#000', light: '#fff' }
-    })
-  }
-}}
-  style={{ width: '220px', height: '220px' }}
-/>
+          <img
+            src={`/api/qr/${slug}`}
+            alt="QR Code"
+            style={{ width: '220px', height: '220px' }}
+          />
         )}
       </div>
 
@@ -128,8 +107,9 @@ export default function QRCodeCard({ slug, firstname, lastname }: Props) {
           gap: '10px',
         }}
       >
-        <button
-          onClick={downloadQRCode}
+        <a
+          href={`/api/qr/${slug}`}
+          download={`qr-code-${firstname || 'card'}-${lastname || ''}.png`}
           style={{
             width: '100%',
             background: '#cc0000',
@@ -141,10 +121,13 @@ export default function QRCodeCard({ slug, firstname, lastname }: Props) {
             fontSize: '18px',
             letterSpacing: '3px',
             cursor: 'pointer',
+            textDecoration: 'none',
+            textAlign: 'center',
+            display: 'block',
           }}
         >
           TÉLÉCHARGER QR
-        </button>
+        </a>
 
         <button
           onClick={copyUrl}
