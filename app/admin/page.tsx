@@ -48,10 +48,15 @@ if (allTokens) setTokens(allTokens)
 async function resetToken(code: string) {
   if (!confirm(`Réinitialiser le token ${code} ? Le client perdra l'accès.`)) return
   await supabase.from('nfc_tokens')
-    .update({ activated_at: null, user_id: null, card_id: null })
+    .update({ 
+      status: 'unclaimed',      // ← AJOUTÉ
+      activated_at: null, 
+      user_id: null, 
+      card_id: null 
+    })
     .eq('code', code)
   setTokens(prev => prev.map(t => t.code === code
-    ? { ...t, activated_at: null, user_id: null, card_id: null, cards: null }
+    ? { ...t, status: 'unclaimed', activated_at: null, user_id: null, card_id: null, cards: null }  // ← AJOUTÉ status
     : t))
 }
 
