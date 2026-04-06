@@ -5,7 +5,6 @@ import { createServerSupabaseClient } from '../../../lib/supabase-server'
 import ScanTracker from './ScanTracker'
 import CardActions from './CardActions'
 import { headers } from 'next/headers'
-import { createServerSupabaseClient } from '../../../lib/supabase-server'
 
 export default async function PublicCardPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
@@ -35,7 +34,7 @@ export default async function PublicCardPage({ params }: { params: Promise<{ slu
     <div style={{ minHeight: '100vh', background: '#0a0a0a', color: '#e8e0d0', fontFamily: "'Rajdhani',sans-serif", maxWidth: '480px', margin: '0 auto' }}>
       
       <ScanTracker slug={slug} />
-      
+
       {/* Hero */}
       <div style={{ background: `linear-gradient(180deg, #1a0000 0%, #0a0a0a 100%)`, borderBottom: `1px solid ${accent}33`, padding: '48px 24px 36px', textAlign: 'center', position: 'relative', overflow: 'hidden' }}>
 
