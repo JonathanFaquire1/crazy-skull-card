@@ -4,12 +4,30 @@ import { notFound } from 'next/navigation'
 import { createServerSupabaseClient } from '../../../lib/supabase-server'
 import ScanTracker from './ScanTracker'
 import CardActions from './CardActions'
+import { headers } from 'next/headers'
+import { createClient } from '@/utils/supabase/server'
 
 export default async function PublicCardPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
-  const supabase = await createServerSupabaseClient()
 
-  const { data: card } = await supabase.from('cards').select('*').eq('slug', slug).eq('is_active', true).single()
+  // Track la visite (fire and forget, sans bloquer le rendu)
+  const headersList = await headers()
+  const supabase = createClient()
+  supabase.from('card_views').insert({
+    slug,
+    user_agent: headersList.get('user-agent'),
+    referrer: headersList.get('referer'),
+  }).then(() => {})
+
+  // Chargement de la carte
+  const supabaseServer = await createServerSupabaseClient()
+  const { data: card } = await supabaseServer
+    .from('cards')
+    .select('*')
+    .eq('slug', slug)
+    .eq('is_active', true)
+    .single()
+
   if (!card) notFound()
 
   const accent = card.color_accent || '#cc0000'
@@ -72,19 +90,18 @@ export default async function PublicCardPage({ params }: { params: Promise<{ slu
         )}
 
         <CardActions
-  slug={slug}
-  firstname={card.firstname}
-  lastname={card.lastname}
-  accent={accent}
-/>
+          slug={slug}
+          firstname={card.firstname}
+          lastname={card.lastname}
+          accent={accent}
+        />
 
         {/* Footer */}
         <div style={{ textAlign: 'center', fontSize: '11px', color: '#2a2a2a', fontFamily: "'JetBrains Mono',monospace", letterSpacing: '2px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
           <img src="/logo.png" alt="" style={{ height: '14px', width: 'auto', opacity: 0.3 }} />
           CRAZY SKULL CARD · <span style={{ color: accent }}>crazyskullcards.fr</span>
         </div>
-
-       </div>
+      </div>
     </div>
   )
 }
