@@ -1,25 +1,9 @@
 import { redirect } from 'next/navigation'
-import { createClient } from '@supabase/supabase-js'
+import { createServerComponentClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-
 function createServerClient() {
-  const cookieStore = cookies()
-  return createClient(supabaseUrl, supabaseKey, {
-    cookies: {
-      get(name: string) {
-        return cookieStore.get(name)?.value
-      },
-      set(name: string, value: string, options: any) {
-        cookieStore.set({ name, value, ...options })
-      },
-      remove(name: string, options: any) {
-        cookieStore.delete({ name, ...options })
-      },
-    },
-  })
+  return createServerComponentClient({ cookies })
 }
 
 export default async function NfcPage({ 
