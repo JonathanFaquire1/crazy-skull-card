@@ -1,3 +1,4 @@
+t
 'use client'
 export const dynamic = 'force-dynamic'
 
@@ -51,8 +52,11 @@ export default function DashboardPage() {
   useEffect(() => {
     const pendingNfc = sessionStorage.getItem('pending_nfc_code')
     if (pendingNfc) {
+      showToast(`📡 Carte NFC détectée : ${pendingNfc}`)
       sessionStorage.removeItem('pending_nfc_code')
-      router.push(`/activate?code=${pendingNfc}`)
+      setTimeout(() => {
+        router.push(`/activate?code=${pendingNfc}`)
+      }, 700)
     }
   }, [router])
 
@@ -79,13 +83,11 @@ export default function DashboardPage() {
           .from('card_views')
           .select('*', { count: 'exact', head: true })
           .eq('slug', slug),
-
         supabase
           .from('card_views')
           .select('*', { count: 'exact', head: true })
           .eq('slug', slug)
           .gte('viewed_at', weekAgo.toISOString()),
-
         supabase
           .from('card_views')
           .select('*', { count: 'exact', head: true })
