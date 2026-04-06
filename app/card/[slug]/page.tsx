@@ -5,14 +5,14 @@ import { createServerSupabaseClient } from '../../../lib/supabase-server'
 import ScanTracker from './ScanTracker'
 import CardActions from './CardActions'
 import { headers } from 'next/headers'
-import { createClient } from '@/utils/supabase/server'
+import { createServerSupabaseClient } from '../../../lib/supabase-server'
 
 export default async function PublicCardPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
-
-  // Track la visite (fire and forget, sans bloquer le rendu)
   const headersList = await headers()
-  const supabase = createClient()
+  const supabase = await createServerSupabaseClient()
+
+  // Track la visite (fire and forget)
   supabase.from('card_views').insert({
     slug,
     user_agent: headersList.get('user-agent'),
@@ -20,8 +20,7 @@ export default async function PublicCardPage({ params }: { params: Promise<{ slu
   }).then(() => {})
 
   // Chargement de la carte
-  const supabaseServer = await createServerSupabaseClient()
-  const { data: card } = await supabaseServer
+  const { data: card } = await supabase
     .from('cards')
     .select('*')
     .eq('slug', slug)
