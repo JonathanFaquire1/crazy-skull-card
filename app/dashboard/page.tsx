@@ -17,6 +17,11 @@ export default function DashboardPage() {
   const [form, setForm] = useState<Partial<Card>>({})
   const [toast, setToast] = useState('')
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
+  const [viewStats, setViewStats] = useState({
+    total: 0,
+    thisWeek: 0,
+    today: 0,
+  })
 
   const fileInputRef = useRef<HTMLInputElement>(null)
   const router = useRouter()
@@ -50,6 +55,62 @@ export default function DashboardPage() {
       router.push(`/activate?code=${pendingNfc}`)
     }
   }, [router])
+
+  useEffect(() => {
+    if (tab === 'stats' && card?.slug) {
+      loadStats(card.slug)
+    }
+  }, [tab, card?.slug])
+
+  async function loadStats(slug: string) {
+    try {
+      const now = new Date()
+      const startOfToday = new Date(now)
+      startOfToday.setHours(0, 0, 0, 0)
+
+      const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
+
+      const [
+        { count: totalCount, error: totalError },
+        { count: weekCount, error: weekError },
+        { count: todayCount, error: todayError },
+      ] = await Promise.all([
+        supabase
+          .from('card_views')
+          .select('*', { count: 'exact', head: true })
+          .eq('slug', slug),
+
+        supabase
+          .from('card_views')
+          .select('*', { count: 'exact', head: true })
+          .eq('slug', slug)
+          .gte('viewed_at', weekAgo.toISOString()),
+
+        supabase
+          .from('card_views')
+          .select('*', { count: 'exact', head: true })
+          .eq('slug', slug)
+          .gte('viewed_at', startOfToday.toISOString()),
+      ])
+
+      if (totalError || weekError || todayError) {
+        console.error('Erreur chargement stats vues:', {
+          totalError,
+          weekError,
+          todayError,
+        })
+        return
+      }
+
+      setViewStats({
+        total: totalCount ?? 0,
+        thisWeek: weekCount ?? 0,
+        today: todayCount ?? 0,
+      })
+    } catch (error) {
+      console.error('Erreur loadStats:', error)
+    }
+  }
 
   async function loadCard() {
     const {
@@ -817,14 +878,77 @@ export default function DashboardPage() {
             <div
               style={{
                 display: 'grid',
+                gridTemplateColumns: '1fr 1fr 1fr',
+                gap: '12px',
+                marginBottom: '24px',
+              }}
+            >
+              {[
+                { v: viewStats.today, l: "VUES AUJOURD'HUI", c: '#cc0000', icon: '👁️' },
+                { v: viewStats.thisWeek, l: 'VUES 7 JOURS', c: '#ff4400', icon: '📅' },
+                { v: viewStats.total, l: 'VUES TOTALES', c: '#ff6600', icon: '📊' },
+              ].map((s) => (
+                <div
+                  key={s.l}
+                  style={{
+                    background: panel,
+                    border: `1px solid ${border}`,
+                    borderRadius: '4px',
+                    padding: '20px',
+                    position: 'relative',
+                    overflow: 'hidden',
+                  }}
+                >
+                  <img
+                    src="/logo.png"
+                    alt=""
+                    style={{
+                      position: 'absolute',
+                      bottom: '-10px',
+                      right: '-10px',
+                      width: '60px',
+                      opacity: 0.05,
+                      pointerEvents: 'none',
+                    }}
+                  />
+                  <div style={{ fontSize: '28px', marginBottom: '4px' }}>{s.icon}</div>
+                  <div
+                    style={{
+                      fontFamily: "'Bebas Neue',sans-serif",
+                      fontSize: '44px',
+                      color: s.c,
+                      letterSpacing: '-1px',
+                      lineHeight: 1,
+                    }}
+                  >
+                    {s.v}
+                  </div>
+                  <div
+                    style={{
+                      fontSize: '11px',
+                      color: faint,
+                      fontFamily: "'JetBrains Mono',monospace",
+                      letterSpacing: '1px',
+                      marginTop: '4px',
+                    }}
+                  >
+                    {s.l}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div
+              style={{
+                display: 'grid',
                 gridTemplateColumns: '1fr 1fr',
                 gap: '12px',
                 marginBottom: '24px',
               }}
             >
               {[
-                { v: card.scan_count, l: 'SCANS NFC', c: '#cc0000', icon: '📡' },
-                { v: card.save_count, l: 'CONTACTS SAUVÉS', c: '#ff6600', icon: '📇' },
+                { v: card.scan_count ?? 0, l: 'SCANS NFC', c: '#cc0000', icon: '📡' },
+                { v: card.save_count ?? 0, l: 'CONTACTS SAUVÉS', c: '#ff6600', icon: '📇' },
               ].map((s) => (
                 <div
                   key={s.l}
@@ -903,7 +1027,7 @@ export default function DashboardPage() {
                   lineHeight: 1.6,
                 }}
               >
-                Chaque scan NFC et téléchargement de contact sont enregistrés dans Supabase.
+                Chaque visite de carte, scan NFC et téléchargement de contact sont enregistrés dans Supabase.
               </p>
             </div>
           </div>
