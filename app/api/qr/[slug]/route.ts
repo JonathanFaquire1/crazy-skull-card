@@ -3,10 +3,10 @@ import QRCode from 'qrcode'
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { slug: string } }
+  { params }: { params: Promise<{ slug: string }> }
 ) {
   try {
-    const slug = params.slug
+    const { slug } = await params
     const qrUrl = `${process.env.NEXT_PUBLIC_BASE_URL || 'https://crazy-skull-card.vercel.app'}/card/${slug}`
     
     const dataUrl = await QRCode.toDataURL(qrUrl, {
@@ -18,7 +18,6 @@ export async function GET(
       },
     })
 
-    // Convertir dataURL en buffer
     const base64Data = dataUrl.replace(/^data:image\/png;base64,/, '')
     const buffer = Buffer.from(base64Data, 'base64')
 
