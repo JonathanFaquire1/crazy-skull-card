@@ -34,7 +34,7 @@ export default async function NfcPage({
 
   const { data: token } = await supabase
     .from('nfc_tokens')
-    .select('id, code, card_id, status')
+    .select('id, code, card_id, status, activated_at')
     .eq('code', code)
     .single()
 
@@ -46,11 +46,7 @@ export default async function NfcPage({
     redirect(`/auth?claim=${code}`)
   }
 
-  if (token.status === 'claimed') {
-    redirect('/dashboard/card')
-  }
-
-  if (token.status === 'active' && token.card_id) {
+  if (token.card_id) {
     const { data: card } = await supabase
       .from('cards')
       .select('slug')
