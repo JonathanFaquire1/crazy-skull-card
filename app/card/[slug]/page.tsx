@@ -11,13 +11,6 @@ export default async function PublicCardPage({ params }: { params: Promise<{ slu
   const headersList = await headers()
   const supabase = await createServerSupabaseClient()
 
-  // Track la visite (fire and forget)
-  supabase.from('card_views').insert({
-    slug,
-    user_agent: headersList.get('user-agent'),
-    referrer: headersList.get('referer'),
-  }).then(() => {})
-
   // Chargement de la carte
   const { data: card } = await supabase
     .from('cards')
@@ -27,6 +20,12 @@ export default async function PublicCardPage({ params }: { params: Promise<{ slu
     .single()
 
   if (!card) notFound()
+
+  await supabase.from('card_views').insert({
+    slug,
+    user_agent: headersList.get('user-agent')?.slice(0, 1024),
+    referrer: headersList.get('referer')?.slice(0, 2048),
+  })
 
   const accent = card.color_accent || '#cc0000'
 

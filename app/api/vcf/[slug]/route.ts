@@ -14,6 +14,7 @@ export async function GET(
       .from('cards')
       .select('*')
       .eq('slug', slug)
+      .eq('is_active', true)
       .single()
 
     if (error || !card) {
@@ -37,7 +38,7 @@ export async function GET(
       status: 200,
       headers: {
         'Content-Type': 'text/vcard; charset=utf-8',
-        'Content-Disposition': `attachment; filename="${card.firstname}_${card.lastname}.vcf"`,
+        'Content-Disposition': `attachment; filename="${card.slug.replace(/[^a-zA-Z0-9_-]/g, '')}.vcf"`,
         'Cache-Control': 'no-store',
       },
     })

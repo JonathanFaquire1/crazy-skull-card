@@ -8,6 +8,7 @@ import { useRouter } from 'next/navigation'
 import QRCodeCard from './QRCodeCard'
 import ThemeToggle from '../../components/ThemeToggle'
 import { useTheme } from 'next-themes'
+import { normalizeNfcCode, pendingNfcKey } from '../../lib/nfc'
 
 export default function DashboardPage() {
   const [card, setCard] = useState<Card | null>(null)
@@ -50,13 +51,9 @@ export default function DashboardPage() {
   }, [])
 
   useEffect(() => {
-    const pendingNfc = sessionStorage.getItem('pending_nfc_code')
+    const pendingNfc = normalizeNfcCode(sessionStorage.getItem(pendingNfcKey))
     if (pendingNfc) {
       showToast(`📡 Carte NFC détectée : ${pendingNfc}`)
-      sessionStorage.removeItem('pending_nfc_code')
-      setTimeout(() => {
-        router.push(`/activate?code=${pendingNfc}`)
-      }, 700)
     }
   }, [router])
 
@@ -221,17 +218,20 @@ export default function DashboardPage() {
           throw new Error('Erreur lors de la création de la carte')
         }
 
-        const pendingCode = sessionStorage.getItem('pending_nfc_code')
+        const pendingCode = normalizeNfcCode(sessionStorage.getItem(pendingNfcKey))
+
+        // Preserve a successfully created card even if linking needs a retry.
+        setCard(newCard)
+        setForm(newCard)
+        setTab('card')
 
         if (pendingCode && newCard.id) {
-          const { error: linkError } = await supabase
-            .from('nfc_tokens')
-            .update({ card_id: newCard.id })
-            .eq('code', pendingCode)
+          const { data: linked, error: linkError } = await supabase.rpc('claim_nfc_token', { p_code: pendingCode })
 
           if (linkError) throw linkError
+          if (!linked?.success) throw new Error(linked?.message || 'Carte créée. Réessayez de scanner votre code NFC pour la lier.')
 
-          sessionStorage.removeItem('pending_nfc_code')
+          sessionStorage.removeItem(pendingNfcKey)
         }
 
         setCard(newCard)
@@ -642,10 +642,10 @@ export default function DashboardPage() {
               </div>
 
               {[
-                'Téléchargez le fichier .vcf',
+                'Sur une carte de test vierge, copiez le lien de votre carte',
                 'Ouvrez NFC Tools (iOS/Android)',
-                'Écrire → Contact → Importez le .vcf',
-                'Approchez votre carte NTAG215 → ✅',
+                'Écrire → URL → Collez le lien de développement',
+                'Approchez la carte de test, puis vérifiez le lien avec votre téléphone',
               ].map((step, i) => (
                 <div
                   key={i}

@@ -17,7 +17,7 @@ Le chargement de la configuration refuse une cible Vercel Production et toute br
 
 `docs/development-schema.sql` recrée les cinq tables applicatives, contraintes, index, fonctions, politiques et un bucket avatars vide, à partir des métadonnées de la base existante. Aucune ligne de production, aucun compte Auth, aucun SKU et aucun fichier n’est copié.
 
-La nouvelle base applique RLS aux cinq tables. Le déclencheur d’inscription crée toujours un rôle client dans un schéma privé ; les utilisateurs ne peuvent pas modifier leur rôle. Les statistiques de vues sont limitées au propriétaire et seules les cartes actives ou possédées sont visibles. Les fonctions de compteur s’exécutent avec les droits de l’appelant : les compteurs publics et le parcours de réservation NFC restent à reprendre et tester avant commercialisation. Aucun administrateur de test n’est créé automatiquement.
+La base applique RLS aux tables. Le déclencheur d’inscription crée toujours un rôle client dans un schéma privé ; les utilisateurs ne peuvent pas modifier leur rôle. Les statistiques de vues sont limitées au propriétaire et seules les cartes actives ou possédées sont visibles. `docs/development-workflows.sql`, appliqué après le schéma initial, ajoute la réservation atomique NFC, le contrôle administrateur et les événements de compteurs. Les visiteurs peuvent enregistrer un événement autorisé mais ne peuvent pas modifier une carte. Les trois comptes fictifs de vérification sont temporaires, distincts des utilisateurs réels.
 
 Ne jamais exécuter ce SQL sur la production. Il ne s’agit pas d’une migration de production ni d’un audit de sécurité complet.
 
@@ -30,6 +30,8 @@ npm run build
 npm run dev
 ```
 
-Utiliser uniquement des identités fictives et des fichiers de test. Les emails Auth et leurs redirections doivent être configurés dans le projet Supabase Dev avant de tester inscription et récupération de mot de passe. Ne pas réutiliser le SMTP, les comptes ou les cartes physiques de production.
+Utiliser uniquement des identités fictives et des fichiers de test. Les redirections Supabase Auth sont configurées pour l’alias stable `https://crazy-skull-card-git-development-jonathanfaquire1s-projects.vercel.app/**` et `http://localhost:3000/**`. Le callback `/auth/callback` échange le code PKCE et limite les destinations autorisées. Le service d’emails Supabase par défaut est conservé, avec ses restrictions aux adresses autorisées. Ne pas réutiliser le SMTP, les comptes ou les cartes physiques de production.
+
+`scripts/test-development.cjs` vérifie les parcours et les refus d’accès avec des identifiants fictifs fournis par `CSC_TEST_FIXTURES` (JSON hors dépôt), et écrit un rapport sans secrets dans `CSC_TEST_REPORT`. Les codes SKU99001 et SKU99002 sont réservés à cette exécution de test. Ce script ne doit être utilisé que sur le projet Dev et un jeu de fixtures neuf. Les tests ne valident pas la programmation physique d’une puce NFC ni la délivrabilité réelle des emails.
 
 Le connecteur Vercel a refusé la lecture et l’écriture des variables (403), et le CLI n’a pas accès à l’équipe. La configuration dédiée au code évite de dépendre de ces variables. Les dépendances existantes présentent des alertes de sécurité ; cette version est un environnement de travail, pas une autorisation de commercialiser.

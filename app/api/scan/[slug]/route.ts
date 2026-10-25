@@ -13,6 +13,7 @@ export async function POST(
       .from('cards')
       .select('id, slug')
       .eq('slug', slug)
+      .eq('is_active', true)
       .single()
 
     if (error || !card) {

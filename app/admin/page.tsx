@@ -27,7 +27,7 @@ export default function AdminPage() {
     }
     const { data: allTokens } = await supabase
   .from('nfc_tokens')
-  .select('*, cards(firstname, lastname, slug)')
+  .select('id,code,card_id,status,activated_at,created_at,cards(firstname,lastname,slug)')
   .order('code', { ascending: true })
 if (allTokens) setTokens(allTokens)
     setLoading(false)
@@ -47,14 +47,8 @@ if (allTokens) setTokens(allTokens)
 
 async function resetToken(code: string) {
   if (!confirm(`Réinitialiser le token ${code} ? Le client perdra l'accès.`)) return
-  await supabase.from('nfc_tokens')
-    .update({ 
-      status: 'unclaimed',      // ← AJOUTÉ
-      activated_at: null, 
-      user_id: null, 
-      card_id: null 
-    })
-    .eq('code', code)
+  const { error } = await supabase.rpc('reset_nfc_token', { p_code: code })
+  if (error) { alert('Réinitialisation impossible.'); return }
   setTokens(prev => prev.map(t => t.code === code
     ? { ...t, status: 'unclaimed', activated_at: null, user_id: null, card_id: null, cards: null }  // ← AJOUTÉ status
     : t))
@@ -145,7 +139,7 @@ async function resetToken(code: string) {
   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: '12px', marginBottom: '20px' }}>
     {[
       { v: tokens.length, l: 'TOTAL', c: '#cc0000' },
-      { v: tokens.filter(t => t.activated_at && t.user_id).length, l: 'ACTIVÉS', c: '#00cc44' },
+      { v: tokens.filter(t => t.status === 'active').length, l: 'ACTIVÉS', c: '#00cc44' },
       { v: tokens.filter(t => !t.activated_at).length, l: 'LIBRES', c: '#ff6600' }
     ].map(s => (
       <div key={s.l} style={{ background: '#161616', border: '1px solid #2a2a2a', borderRadius: '4px', padding: '16px', textAlign: 'center' }}>

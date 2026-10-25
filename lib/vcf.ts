@@ -12,28 +12,33 @@ export async function generateVCF(card: Card): Promise<string> {
   ]
   if (card.title)      lines.push(`TITLE:${escapeVCard(card.title)}`)
   if (card.company)    lines.push(`ORG:${escapeVCard(card.company)}`)
-  if (card.email)      lines.push(`EMAIL;TYPE=WORK:${card.email}`)
-  if (card.phone)      lines.push(`TEL;TYPE=CELL:${card.phone}`)
-  if (card.website)    lines.push(`URL:${card.website}`)
+  if (card.email)      lines.push(`EMAIL;TYPE=WORK:${escapeVCard(card.email)}`)
+  if (card.phone)      lines.push(`TEL;TYPE=CELL:${escapeVCard(card.phone)}`)
+  if (card.website)    lines.push(`URL:${escapeVCard(card.website)}`)
   if (card.address)    lines.push(`ADR;TYPE=WORK:;;${escapeVCard(card.address)};;;;`)
-  if (card.linkedin)   lines.push(`X-SOCIALPROFILE;TYPE=linkedin:${card.linkedin}`)
-  if (card.facebook)   lines.push(`X-SOCIALPROFILE;TYPE=facebook:${card.facebook}`)
-  if (card.twitter)    lines.push(`X-SOCIALPROFILE;TYPE=twitter:${card.twitter}`)
-  if (card.instagram)  lines.push(`X-SOCIALPROFILE;TYPE=instagram:${card.instagram}`)
+  if (card.linkedin)   lines.push(`X-SOCIALPROFILE;TYPE=linkedin:${escapeVCard(card.linkedin)}`)
+  if (card.facebook)   lines.push(`X-SOCIALPROFILE;TYPE=facebook:${escapeVCard(card.facebook)}`)
+  if (card.twitter)    lines.push(`X-SOCIALPROFILE;TYPE=twitter:${escapeVCard(card.twitter)}`)
+  if (card.instagram)  lines.push(`X-SOCIALPROFILE;TYPE=instagram:${escapeVCard(card.instagram)}`)
   if (card.bio)        lines.push(`NOTE:${escapeVCard(card.bio)}`)
 
   // ✅ Photo en base64
   if (card.avatar_url) {
     try {
-      const imgRes = await fetch(card.avatar_url)
+      const avatar = new URL(card.avatar_url)
+      const storage = new URL(process.env.NEXT_PUBLIC_SUPABASE_URL!)
+      if (avatar.origin !== storage.origin || !avatar.pathname.startsWith('/storage/v1/object/public/avatars/')) {
+        throw new Error('Unsupported avatar origin')
+      }
+      const imgRes = await fetch(avatar, { redirect: 'error', signal: AbortSignal.timeout(5000) })
+      const mime = imgRes.headers.get('content-type')?.split(';')[0] || ''
+      if (!imgRes.ok || !['image/png','image/jpeg','image/webp'].includes(mime) || Number(imgRes.headers.get('content-length')) > 5242880) throw new Error('Invalid avatar')
       const imgBuffer = await imgRes.arrayBuffer()
+      if (imgBuffer.byteLength > 5242880) throw new Error('Avatar too large')
       const base64 = Buffer.from(imgBuffer).toString('base64')
-      const mime = imgRes.headers.get('content-type') || 'image/jpeg'
       const type = mime.split('/')[1].toUpperCase()
       lines.push(`PHOTO;ENCODING=b;TYPE=${type}:${base64}`)
-    } catch {
-      lines.push(`PHOTO;VALUE=URI:${card.avatar_url}`)
-    }
+    } catch { /* The contact remains downloadable if its optional photo is unavailable. */ }
   }
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || ''

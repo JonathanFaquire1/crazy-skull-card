@@ -2,6 +2,7 @@
 import { Suspense, useState } from 'react'
 import { createClient } from '../../lib/supabase'
 import { useRouter, useSearchParams } from 'next/navigation'
+import { normalizeNfcCode, pendingNfcKey } from '../../lib/nfc'
 
 function AuthContent() {
   const [mode, setMode] = useState<'login' | 'register'>('login')
@@ -14,7 +15,7 @@ function AuthContent() {
   const [resetSent, setResetSent] = useState(false)
   const router = useRouter()
   const searchParams = useSearchParams()
-  const nfcCode = searchParams.get('nfc')
+  const nfcCode = normalizeNfcCode(searchParams.get('nfc') || searchParams.get('claim'))
   const supabase = createClient()
 
   async function handleSubmit(e: React.FormEvent) {
@@ -22,16 +23,20 @@ function AuthContent() {
     setLoading(true); setMessage('')
     try {
       if (mode === 'register') {
-        const { error } = await supabase.auth.signUp({ email, password })
+        const next = nfcCode ? `/activate?code=${nfcCode}` : '/dashboard'
+        const { data, error } = await supabase.auth.signUp({ email, password, options: {
+          emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`,
+        } })
         if (error) throw error
         setIsError(false)
-        setMessage('✅ Compte créé ! Vous pouvez vous connecter.')
+        if (data.session) { router.replace(next); router.refresh(); return }
+        setMessage('✅ Vérifiez votre boîte mail pour confirmer votre inscription avant de vous connecter.')
         setMode('login')
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password })
         if (error) throw error
-        if (nfcCode) localStorage.setItem('pending_nfc', nfcCode)
-        router.push('/dashboard'); router.refresh()
+        if (nfcCode) sessionStorage.setItem(pendingNfcKey, nfcCode)
+        router.replace(nfcCode ? `/activate?code=${nfcCode}` : '/dashboard'); router.refresh()
       }
     } catch (err: unknown) {
       setIsError(true)
@@ -43,7 +48,7 @@ function AuthContent() {
     if (!email) { setIsError(true); setMessage('Entrez votre email d\'abord.'); return }
     setLoading(true)
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/reset-password`,
+      redirectTo: `${window.location.origin}/auth/callback?next=/reset-password`,
     })
     setLoading(false)
     if (error) { setIsError(true); setMessage(error.message) }
@@ -66,6 +71,7 @@ function AuthContent() {
           <p style={{ fontSize: '13px', color: '#5a5248', marginBottom: '32px', fontFamily: "'JetBrains Mono', monospace", letterSpacing: '0.5px' }}>
             {mode === 'login' ? 'Accédez à votre espace' : 'Rejoignez le crew'}
           </p>
+          {searchParams.get('error') === 'confirmation' ? <p role="alert">Lien de confirmation expiré ou invalide. Demandez un nouvel email.</p> : null}
           <form onSubmit={handleSubmit}>
             <div style={{ marginBottom: '16px' }}>
               <label style={{ display: 'block', fontSize: '11px', color: '#9a9080', fontFamily: "'JetBrains Mono',monospace", letterSpacing: '2px', textTransform: 'uppercase', marginBottom: '8px' }}>Email</label>

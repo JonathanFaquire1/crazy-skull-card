@@ -1,6 +1,8 @@
 import { redirect } from 'next/navigation'
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { cookies } from 'next/headers'
+import { notFound } from 'next/navigation'
+import { normalizeNfcCode } from '../../../lib/nfc'
 
 export default async function NfcPage({
   params,
@@ -8,6 +10,8 @@ export default async function NfcPage({
   params: Promise<{ code: string }>
 }) {
   const { code } = await params
+  const normalizedCode = normalizeNfcCode(code)
+  if (!normalizedCode) notFound()
   const cookieStore = await cookies()
 
   const supabase = createServerClient(
@@ -35,15 +39,15 @@ export default async function NfcPage({
   const { data: token } = await supabase
     .from('nfc_tokens')
     .select('id, code, card_id, status, activated_at')
-    .eq('code', code)
+    .eq('code', normalizedCode)
     .single()
 
   if (!token) {
-    redirect('/404')
+    notFound()
   }
 
   if (token.status === 'unclaimed') {
-    redirect(`/auth?claim=${code}`)
+    redirect(`/activate?code=${normalizedCode}`)
   }
 
   if (token.card_id) {
@@ -58,5 +62,5 @@ export default async function NfcPage({
     }
   }
 
-  redirect('/dashboard/card')
+  redirect(`/activate?code=${normalizedCode}`)
 }
