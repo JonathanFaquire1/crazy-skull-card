@@ -30,7 +30,7 @@ npm run build
 npm run dev
 ```
 
-Utiliser uniquement des identités fictives et des fichiers de test. Les redirections Supabase Auth sont configurées pour l’alias stable `https://crazy-skull-card-git-development-jonathanfaquire1s-projects.vercel.app/**` et `http://localhost:3000/**`. Le callback `/auth/callback` échange le code PKCE et limite les destinations autorisées. Le service d’emails Supabase par défaut est conservé, avec ses restrictions aux adresses autorisées. Ne pas réutiliser le SMTP, les comptes ou les cartes physiques de production.
+Utiliser uniquement des identités fictives et des fichiers de test. Les redirections Supabase Auth sont configurées pour l’alias stable `https://crazy-skull-card-git-development-jonathanfaquire1s-projects.vercel.app/**` et `http://localhost:3000/**`. La page `/auth/callback` attend un clic de confirmation, traite un code PKCE ou un retour de session dans le fragment du lien, retire les paramètres d’authentification de l’historique puis valide l’utilisateur. Les destinations sont limitées aux routes de l’application. Le service d’emails Supabase par défaut est conservé, avec ses restrictions aux adresses autorisées. Ne pas réutiliser le SMTP, les comptes ou les cartes physiques de production.
 
 `scripts/test-development.cjs` vérifie les parcours et les refus d’accès avec des identifiants fictifs fournis par `CSC_TEST_FIXTURES` (JSON hors dépôt), et écrit un rapport sans secrets dans `CSC_TEST_REPORT`. Les codes SKU99001 et SKU99002 sont réservés à cette exécution de test. Ce script ne doit être utilisé que sur le projet Dev et un jeu de fixtures neuf. Les tests ne valident pas la programmation physique d’une puce NFC ni la délivrabilité réelle des emails.
 

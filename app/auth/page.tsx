@@ -1,5 +1,5 @@
 'use client'
-import { Suspense, useState } from 'react'
+import { Suspense, useState, useEffect } from 'react'
 import { createClient } from '../../lib/supabase'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { normalizeNfcCode, pendingNfcKey } from '../../lib/nfc'
@@ -17,6 +17,15 @@ function AuthContent() {
   const searchParams = useSearchParams()
   const nfcCode = normalizeNfcCode(searchParams.get('nfc') || searchParams.get('claim'))
   const supabase = createClient()
+
+  useEffect(() => {
+    const fragment = new URLSearchParams(window.location.hash.slice(1))
+    // Preserve legacy email responses that a server-side redirect cannot read.
+    if (fragment.has('access_token') && fragment.has('refresh_token')) {
+      const next = fragment.get('type') === 'recovery' ? '/reset-password' : '/dashboard'
+      router.replace(`/auth/callback?next=${next}${window.location.hash}`)
+    }
+  }, [router])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -72,6 +81,7 @@ function AuthContent() {
             {mode === 'login' ? 'Accédez à votre espace' : 'Rejoignez le crew'}
           </p>
           {searchParams.get('error') === 'confirmation' ? <p role="alert">Lien de confirmation expiré ou invalide. Demandez un nouvel email.</p> : null}
+          {searchParams.get('error') === 'browser' ? <p role="alert">Ouvrez le lien dans le navigateur où vous avez demandé cet email. Si le lien a déjà été utilisé, demandez-en un nouveau.</p> : null}
           <form onSubmit={handleSubmit}>
             <div style={{ marginBottom: '16px' }}>
               <label style={{ display: 'block', fontSize: '11px', color: '#9a9080', fontFamily: "'JetBrains Mono',monospace", letterSpacing: '2px', textTransform: 'uppercase', marginBottom: '8px' }}>Email</label>

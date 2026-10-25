@@ -16,6 +16,7 @@ module.exports = {
     return [{ source: '/:path*', headers: [
       { key: 'X-Robots-Tag', value: 'noindex, nofollow, noarchive' },
       { key: 'X-Crazy-Skull-Environment', value: 'development' },
+      { key: 'Referrer-Policy', value: 'no-referrer' },
     ] }]
   },
 }
